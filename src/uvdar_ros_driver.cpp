@@ -53,6 +53,7 @@ private:
   LLCP_Receiver_t llcp_receiver;
 
   serial_port::SerialPort serial_port_;
+  std::map<std::string, std::vector<std::string>> listAllDeviceSerialPorts();
   std::string getDeviceSerialPort(const std::string& serial_short);
   bool openSerialPort(std::string st_serial_number, int baudrate);
   void serialThread(void);
@@ -85,34 +86,10 @@ private:
   ros::Time maintainer_last_time_;
 };
 
-// std::string UvdarRosDriver::getDeviceSerialPort(const std::string& serial_short) {
-//   namespace fs = std::filesystem;
-//   for (const auto& entry : fs::directory_iterator("/sys/class/tty")) {
-//     const std::string tty_name = entry.path().filename();
-//     if (tty_name.find("ttyACM") != 0)
-//       continue;
-
-//     std::string device_path = entry.path().string() + "/device/../";
-//     std::string serial_file = device_path + "serial";
-//     std::ifstream serial_ifs(serial_file);
-//     if (!serial_ifs.is_open())
-//       continue;
-
-//     std::string serial;
-//     std::getline(serial_ifs, serial);
-//     serial_ifs.close();
-
-//     if (serial == serial_short) {
-//       ROS_INFO("[UvdarRosDriver]: Found serial port for device with serial number %s: %s", serial_short.c_str(), tty_name.c_str());
-//       //return "/dev/" + tty_name;
-//     }
-//   }
-//   return "";
-// }
-
-std::string UvdarRosDriver::getDeviceSerialPort(const std::string& serial_short) {
+std::map<std::string, std::vector<std::string>> UvdarRosDriver::listAllDeviceSerialPorts() {
   namespace fs = std::filesystem;
-  std::vector<std::string> result;
+  std::map<std::string, std::vector<std::string>> serial_map;
+
   for (const auto& entry : fs::directory_iterator("/sys/class/tty")) {
     const std::string tty_name = entry.path().filename();
     if (tty_name.find("ttyACM") != 0)
@@ -128,13 +105,25 @@ std::string UvdarRosDriver::getDeviceSerialPort(const std::string& serial_short)
     std::getline(serial_ifs, serial);
     serial_ifs.close();
 
-    if (serial == serial_short) {
-      result.push_back("/dev/" + tty_name);
-    }
+    std::string tty_full_path = "/dev/" + tty_name;
+    serial_map[serial].push_back(tty_full_path);
   }
-  // Seřadit podle čísla (ttyACM0, ttyACM1, ...)
-  std::sort(result.begin(), result.end());
-  return result[0];
+
+  // Sort each list of tty devices for every serial
+  for (auto& [serial, ttys] : serial_map) {
+    std::sort(ttys.begin(), ttys.end());
+  }
+
+  return serial_map;
+}
+
+std::string UvdarRosDriver::getDeviceSerialPort(const std::string& serial_short) {
+  auto serial_map = listAllDeviceSerialPorts();
+  auto it = serial_map.find(serial_short);
+  if (it == serial_map.end() || it->second.empty()) {
+    return "";
+  }
+  return it->second.front();
 }
 
 void UvdarRosDriver::onInit() {
@@ -144,11 +133,11 @@ void UvdarRosDriver::onInit() {
 
   ros::Time::waitForValid();
 
-  ROS_INFO("[UvdarRosDriver]: node initialized");
+  ROS_INFO("[%s]: Node initialized", ros::this_node::getName().c_str());
 
   llcp_initialize(&llcp_receiver);
 
-  ROS_INFO("[UvdarRosDriver]: llcp receiver initialized");
+  ROS_INFO("[%s]: LLCP receiver initialized", ros::this_node::getName().c_str());
 
   // TODO: configure UVDAR module as soon as it is implemented on UVDAR firmware side
   // ROS_INFO("[UvdarRosDriver]: UVDAR module configured");
@@ -159,7 +148,7 @@ void UvdarRosDriver::onInit() {
 
   uvdar_publisher_ = nh_.advertise<uvdar_ros_driver::UwbRangeStamped>("distance", 1);
 
-  maintainer_timer_     = nh_.createTimer(ros::Rate(0.1), &UvdarRosDriver::callbackMaintainerTimer, this);
+  maintainer_timer_     = nh_.createTimer(ros::Rate(0.2), &UvdarRosDriver::callbackMaintainerTimer, this);
   maintainer_last_time_ = ros::Time::now();
   {
     std::scoped_lock lock(mutex_connected_);
@@ -167,7 +156,7 @@ void UvdarRosDriver::onInit() {
   }
 
   if (debug_serial_) {
-    ROS_INFO("[UvdarRosDriver]: Serial Debug is enabled");
+    ROS_INFO("[%s]: Serial Debug is enabled", ros::this_node::getName().c_str());
   }
 
   connectToSerial();
@@ -180,10 +169,15 @@ void UvdarRosDriver::connectToSerial() {
     serial_thread_.join();
   }
 
-  bool tmp_conected = false;
+  bool tmp_connected = false;
 
-  while (!tmp_conected) {
-    tmp_conected = openSerialPort(usb_serial_number_, baudrate_);
+  while (!tmp_connected) {
+    tmp_connected = openSerialPort(usb_serial_number_, baudrate_);
+    if (!tmp_connected && usb_serial_number_.empty())
+    {
+      ros::shutdown(); // Clean exit
+      return;
+    }
   }
 
   {
@@ -196,22 +190,37 @@ void UvdarRosDriver::connectToSerial() {
 
 bool UvdarRosDriver::openSerialPort(std::string serial_number, int baudrate) {
 
-  std::string portname = "/dev/ttySTM_" + serial_number + "_00";
-  ROS_INFO_THROTTLE(1.0, "[%s]: Trying to find serial port for device", ros::this_node::getName().c_str());
+  std::map<std::string, std::vector<std::string>> serial_map = listAllDeviceSerialPorts();
+  std::string portname = getDeviceSerialPort(serial_number);
   if (serial_number.empty()) {
     ROS_ERROR_THROTTLE(1.0, "[%s]: Serial number is not set, available device serial numbers:", ros::this_node::getName().c_str());
-
+    for (const auto& [serial, ttys] : serial_map) {
+      std::ostringstream oss;
+      oss << "Device " << serial << ": ";
+      
+      for (size_t i = 0; i < ttys.size(); ++i) {
+        const std::string& tty_path = ttys[i];
+        std::string tty_name = tty_path.substr(tty_path.find_last_of('/') + 1);
+        oss << tty_name;
+        if (i < ttys.size() - 1)
+        oss << ", ";
+      }
+      
+      ROS_ERROR_STREAM(oss.str()); // Log the constructed message
+    }
     return false;
   }
-  ROS_INFO_STREAM_THROTTLE(1.0, "SerialNumber: " << serial_number);
+  ROS_INFO_THROTTLE(1.0, "[%s]: Trying to find serial port for device:", ros::this_node::getName().c_str());
+  ROS_INFO_STREAM_THROTTLE(1.0, std::string(ros::this_node::getName().length() +4,' ') << "SerialNumber: " << serial_number);
   portname = getDeviceSerialPort(serial_number);
   if (portname.empty()) {
     ROS_ERROR_THROTTLE(1.0, "[%s]: Device not found, it's serial port does not exist", ros::this_node::getName().c_str());
     return false;
   }
 
-  ROS_INFO_THROTTLE(1.0, "[%s]: Openning serial port.", ros::this_node::getName().c_str());
-  ROS_INFO_STREAM_THROTTLE(1.0, "Portname: " << portname << " baudrate: " << baudrate);
+  ROS_INFO_THROTTLE(1.0, "[%s]: Opening serial port:", ros::this_node::getName().c_str());
+  ROS_INFO_STREAM_THROTTLE(1.0, std::string(ros::this_node::getName().length() +4,' ') << "Portname: " << portname);
+  ROS_INFO_STREAM_THROTTLE(1.0, std::string(ros::this_node::getName().length() +4,' ') << "Baudrate: " << baudrate);
 
   if (!serial_port_.connect(portname, baudrate)) {
     ROS_ERROR_THROTTLE(1.0, "[%s]: Could not connect to the serial port", ros::this_node::getName().c_str());
@@ -228,7 +237,7 @@ void UvdarRosDriver::serialThread(void) {
   uint8_t  rx_buffer[SERIAL_BUFFER_SIZE];
   uint16_t bytes_read;
 
-  ROS_INFO("[UvdarRosDriver]: serial thread starting");
+  ROS_INFO("[%s]: Serial thread starting", ros::this_node::getName().c_str());
 
   while (running_) {
 
@@ -238,7 +247,7 @@ void UvdarRosDriver::serialThread(void) {
       connected = connected_;
     }
     if (!connected) {
-      ROS_WARN("[UvdarRosDriver]: terminating serial thread because the serial port was disconnected");
+      ROS_WARN("[%s]: Terminating serial thread because the serial port was disconnected", ros::this_node::getName().c_str());
       return;
     }
 
@@ -303,7 +312,7 @@ void UvdarRosDriver::callbackMaintainerTimer(const ros::TimerEvent &event) {
         std::scoped_lock lock(mutex_connected_);
         connected_ = false;
       }
-      ROS_ERROR("[UvdarRosDriver] Serial device is disconnected! ");
+      ROS_ERROR("[%s] Serial device is disconnected!", ros::this_node::getName().c_str());
       connectToSerial();
     }
   }
@@ -314,7 +323,7 @@ void UvdarRosDriver::callbackMaintainerTimer(const ros::TimerEvent &event) {
   }
 
   ROS_INFO_STREAM("------------------------------------------------");
-  ROS_INFO("- uvdar ros driver stats for last %7.04f secs -", (ros::Time::now() - maintainer_last_time_).toSec());
+  ROS_INFO("- uvdar_ros_driver stats for last %7.04f secs -", (ros::Time::now() - maintainer_last_time_).toSec());
   ROS_INFO_STREAM("received messages:");
   for (size_t i = 0; i < received_msgs.size(); i++) {
     std::string tmp_string = "initiator " + std::to_string(received_msgs[i].init) +", responder " + std::to_string(received_msgs[i].resp) + ": " + std::to_string(received_msgs[i].num) + " msgs";
