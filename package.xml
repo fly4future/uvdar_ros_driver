@@ -1,23 +1,22 @@
 <?xml version="1.0"?>
 <package format="2">
 
-  <name>mrs_llcp_ros</name>
+  <name>uvdar_ros_driver</name>
   <version>0.0.1</version>
-  <description>low level communication interface for serial line</description>
+  <description>ROS driver for UVDAR modules</description>
 
-  <maintainer email="hertdani@fel.cvut.cz">Daniel Hert</maintainer>
-  <maintainer email="Tomas.baca@fel.cvut.cz">Tomas Baca</maintainer>
+  <maintainer email="vojnar@fly4future.com">Jan Vojnar</maintainer>
+
 
   <license>BSD 3-Clause</license>
 
-  <author email="hertdani@fel.cvut.cz">Daniel Hert</author>
+  <author email="vojnar@fly4future.com">Jan Vojnar</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roscpp</depend>
   <depend>cmake_modules</depend>
   <depend>nodelet</depend>
-  <depend>mrs_msgs</depend>
 
   <export>
 

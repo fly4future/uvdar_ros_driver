@@ -1,5 +1,5 @@
-<library path="lib/libMrsLlcpRos">
-  <class name="mrs_llcp_ros/MrsLlcpRos" type="mrs_llcp_ros::MrsLlcpRos" base_class_type="nodelet::Nodelet">
-    <description>MrsLlcpRos nodelet</description>
+<library path="lib/libUvdarRosDriver">
+  <class name="uvdar_ros_driver/UvdarRosDriver" type="uvdar_ros_driver::UvdarRosDriver" base_class_type="nodelet::Nodelet">
+    <description>UvdarRosDriver nodelet</description>
   </class>
 </library>
