@@ -9,7 +9,8 @@
   <arg unless="$(arg DEBUG)" name="launch_prefix_debug" value=""/>
   <arg     if="$(arg DEBUG)" name="launch_prefix_debug" value="debug_roslaunch"/>
 
-  <arg name="serial_number" default="207A32663232"/>
+  <!-- with empty serial number, the nodelet will list possibilities and shutdown -->
+  <!-- <arg name="serial_number" default=""/> -->
   <arg name="frame_id" default="uvdar"/>
 
   <!-- will it run as standalone nodelet or using a nodelet manager? -->
