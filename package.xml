@@ -17,6 +17,7 @@
   <depend>roscpp</depend>
   <depend>cmake_modules</depend>
   <depend>nodelet</depend>
+  <depend>mrs_lib</depend>
 
   <export>
 

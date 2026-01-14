@@ -1,0 +1,21 @@
+---
+BasedOnStyle: LLVM
+PointerAlignment: Left
+AccessModifierOffset: -1
+ColumnLimit: 120
+MaxEmptyLinesToKeep: 1
+AlignAfterOpenBracket: Align
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: false
+SpaceBeforeParens: ControlStatements
+BreakBeforeBinaryOperators: false
+KeepEmptyLinesAtTheStartOfBlocks: true
+SortIncludes: false
+NamespaceIndentation: None
+IndentCaseLabels: true

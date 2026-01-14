@@ -1,5 +1,15 @@
 <library path="lib/libUvdarRosDriver">
-  <class name="uvdar_ros_driver/UvdarRosDriver" type="uvdar_ros_driver::UvdarRosDriver" base_class_type="nodelet::Nodelet">
+  <class name="uvdar_ros_driver/UvdarRosDriver" 
+         type="uvdar_ros_driver::UvdarRosDriver" 
+         base_class_type="nodelet::Nodelet">
     <description>UvdarRosDriver nodelet</description>
+  </class>
+</library>
+
+<library path="lib/libUwbKalmanFilterNodelet">
+  <class name="uvdar_ros_driver/UwbKalmanFilterNodelet"
+         type="uvdar_ros_driver::UwbKalmanFilterNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>UwbKalmanFilter nodelet</description>
   </class>
 </library>

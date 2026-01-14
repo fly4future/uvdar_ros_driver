@@ -1,7 +1,6 @@
-#include "serial_port.h"
+#include <uvdar_ros_driver/serial_port.h>
 
-namespace serial_port
-{
+namespace serial_port {
 
 /* SerialPort() //{ */
 
@@ -22,9 +21,7 @@ SerialPort::~SerialPort() {
 
 bool SerialPort::checkConnected() {
 
-  struct termios tmp_newtio
-  {
-  };
+  struct termios tmp_newtio {};
   int serial_status = tcgetattr(serial_port_fd_, &tmp_newtio);
 
   if (serial_status == -1) {
@@ -58,10 +55,8 @@ bool SerialPort::connect(const std::string port, int baudrate) {
     fcntl(serial_port_fd_, F_SETFL, 0);
   }
 
-  struct termios newtio
-  {
-  };
-  bzero(&newtio, sizeof(newtio));  // clear struct for new port settings
+  struct termios newtio {};
+  bzero(&newtio, sizeof(newtio)); // clear struct for new port settings
 
   uint16_t baudrate_set;
   switch (baudrate) {
@@ -139,24 +134,24 @@ bool SerialPort::connect(const std::string port, int baudrate) {
       return false;
   }
 
-  cfsetispeed(&newtio, baudrate_set);  // Input port speed
-  cfsetospeed(&newtio, baudrate_set);  // Output port speed
+  cfsetispeed(&newtio, baudrate_set); // Input port speed
+  cfsetospeed(&newtio, baudrate_set); // Output port speed
 
-  newtio.c_cflag &= ~PARENB;  // no parity bit
-  newtio.c_cflag &= ~CSTOPB;  // 1 stop bit
-  newtio.c_cflag &= ~CSIZE;   // Only one stop bit
-  newtio.c_cflag |= CS8;      // 8 bit word
+  newtio.c_cflag &= ~PARENB; // no parity bit
+  newtio.c_cflag &= ~CSTOPB; // 1 stop bit
+  newtio.c_cflag &= ~CSIZE;  // Only one stop bit
+  newtio.c_cflag |= CS8;     // 8 bit word
 
-  newtio.c_iflag = 0;  // Raw output since no parity checking is done
-  newtio.c_oflag = 0;  // Raw output
-  newtio.c_lflag = 0;  // Raw input is unprocessed
+  newtio.c_iflag = 0; // Raw output since no parity checking is done
+  newtio.c_oflag = 0; // Raw output
+  newtio.c_lflag = 0; // Raw input is unprocessed
 
   // |  copied from MAVROS to possibly fix the issue with arduino  |
   newtio.c_iflag &= ~(IXOFF | IXON);
   newtio.c_cflag &= ~CRTSCTS;
   // | ----------------------------  ---------------------------- |
 
-  newtio.c_cc[VTIME] = 0;  // Wait for up to VTIME*0.1s (1 decisecond), returning as soon as any data is received.
+  newtio.c_cc[VTIME] = 0; // Wait for up to VTIME*0.1s (1 decisecond), returning as soon as any data is received.
   newtio.c_cc[VMIN]  = 0;
 
   tcflush(serial_port_fd_, TCIFLUSH);
@@ -172,9 +167,7 @@ bool SerialPort::connect(const std::string port, int baudrate) {
 /* setBlocking //{ */
 
 void SerialPort::setBlocking(int fd, int should_block) {
-  struct termios tty
-  {
-  };
+  struct termios tty {};
   memset(&tty, 0, sizeof tty);
   if (tcgetattr(fd, &tty) != 0) {
     ROS_ERROR("error %d from tggetattr", errno);
@@ -182,7 +175,7 @@ void SerialPort::setBlocking(int fd, int should_block) {
   }
 
   tty.c_cc[VMIN]  = should_block ? 1 : 0;
-  tty.c_cc[VTIME] = 0;  // 0.0 seconds read timeout
+  tty.c_cc[VTIME] = 0; // 0.0 seconds read timeout
 
   if (tcsetattr(fd, TCSANOW, &tty) != 0)
     ROS_ERROR("error %d setting term attributes", errno);
@@ -196,8 +189,7 @@ void SerialPort::disconnect() {
 
   try {
     close(serial_port_fd_);
-  }
-  catch (int e) {
+  } catch (int e) {
     ROS_WARN_THROTTLE(1.0, "Error while closing the sensor serial line!");
   }
 }
@@ -208,9 +200,8 @@ void SerialPort::disconnect() {
 
 bool SerialPort::sendChar(const char c) {
   try {
-    return write(serial_port_fd_, (const void *)&c, 1);
-  }
-  catch (int e) {
+    return write(serial_port_fd_, (const void*)&c, 1);
+  } catch (int e) {
     ROS_WARN_THROTTLE(1.0, "Error while writing to serial line!");
     return false;
   }
@@ -220,13 +211,12 @@ bool SerialPort::sendChar(const char c) {
 
 /* sendCharArray() //{ */
 
-bool SerialPort::sendCharArray(uint8_t *buffer, int len) {
+bool SerialPort::sendCharArray(uint8_t* buffer, int len) {
   try {
     bool ret_val = write(serial_port_fd_, buffer, len);
     tcflush(serial_port_fd_, TCOFLUSH);
     return ret_val;
-  }
-  catch (int e) {
+  } catch (int e) {
     ROS_WARN_THROTTLE(1.0, "Error while writing to serial line!");
     return false;
   }
@@ -235,17 +225,17 @@ bool SerialPort::sendCharArray(uint8_t *buffer, int len) {
 //}
 
 /* readSerial() //{ */
-int SerialPort::readSerial(uint8_t *arr, int arr_max_size) {
+int SerialPort::readSerial(uint8_t* arr, int arr_max_size) {
   return read(serial_port_fd_, arr, arr_max_size);
 }
 
 //}
 
 /* readChar() //{ */
-bool SerialPort::readChar(uint8_t *c) {
+bool SerialPort::readChar(uint8_t* c) {
   return read(serial_port_fd_, c, 1);
 }
 
 //}
 
-}  // namespace serial_port
+} // namespace serial_port

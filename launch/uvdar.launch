@@ -4,6 +4,8 @@
   <arg name="profiler" default="$(optenv PROFILER false)" />
   <arg name="nodename" default="uvdar_driver" />
 
+  <arg name="run_driver" default="true" />
+
   <!-- will it run using GNU debugger? -->
   <arg name="DEBUG" default="false" />
   <arg unless="$(arg DEBUG)" name="launch_prefix_debug" value=""/>
@@ -14,7 +16,7 @@
   <arg name="frame_id" default="uvdar"/>
 
   <!-- will it run as standalone nodelet or using a nodelet manager? -->
-  <arg name="standalone" default="true" />
+  <arg name="standalone" default="false" />
   <arg name="manager" default="$(arg UAV_NAME)_uvdar_manager" />
   <arg name="n_threads" default="8" />
   <arg unless="$(arg standalone)" name="nodelet" value="load"/>
@@ -23,9 +25,22 @@
   <arg     if="$(arg standalone)" name="nodelet_manager" value=""/>
 
   <group ns="$(arg UAV_NAME)">
+    <!-- If not standalone, start a manager once -->
+    <node unless="$(arg standalone)"
+          pkg="nodelet" type="nodelet" name="$(arg manager)"
+          args="manager"
+          output="screen">
+      <param name="num_worker_threads" value="$(arg n_threads)"/>
+    </node>
 
-    <!-- launch the nodelet -->
-    <node pkg="nodelet" type="nodelet" name="$(arg nodename)" args="$(arg nodelet) uvdar_ros_driver/UvdarRosDriver $(arg nodelet_manager)" launch-prefix="$(arg launch_prefix_debug)" output="screen">
+    <!-- launch the Driver nodelet -->
+    <node if="$(arg run_driver)"
+          pkg="nodelet" 
+          type="nodelet" 
+          name="$(arg nodename)" 
+          args="$(arg nodelet) uvdar_ros_driver/UvdarRosDriver $(arg nodelet_manager)" 
+          launch-prefix="$(arg launch_prefix_debug)" 
+          output="screen">
 
       <rosparam file="$(find uvdar_ros_driver)/config/config.yaml" />
 
@@ -39,8 +54,17 @@
       <!-- remap the topic names to the UAV namespace
       <remap from="~distance" to="~received_message" />
       -->
-
     </node>
+
+    <!-- launch the UwbKalman nodelet -->
+    <node pkg="nodelet" 
+          type="nodelet" 
+          name="uwb_kalman_filter"
+          args="$(arg nodelet) uvdar_ros_driver/UwbKalmanFilterNodelet $(arg nodelet_manager)"
+          launch-prefix="$(arg launch_prefix_debug)"
+          output="screen">
+    </node>
+    
 
   </group>
 

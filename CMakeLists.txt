@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   cmake_modules
   nodelet
+  mrs_lib
   )
 
 add_message_files(DIRECTORY msg FILES
@@ -37,6 +38,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   )
 
+## | --------------------- UvdarRosDriver --------------------- |
 add_library(llcp
   mrs_llcp/llcp.c
 )
@@ -53,6 +55,31 @@ target_link_libraries(UvdarRosDriver
   ${catkin_LIBRARIES}
   )
 
+## | --------------------- UwbKalmanFilter --------------------- |
+add_library(UwbKalmanFilterNodelet SHARED
+  src/uwb_kalman/uwb_kalman_core.cpp 
+  src/uwb_kalman/uwb_kalman_ros.cpp)
+
+target_include_directories(UwbKalmanFilterNodelet
+  PUBLIC
+    include
+    ${catkin_INCLUDE_DIRS}
+)
+
+target_link_libraries(UwbKalmanFilterNodelet
+  ${catkin_LIBRARIES}
+)
+
+
+## --------------------------------------------------------------
+## |                           Install                          |
+## --------------------------------------------------------------
+
+
 install(DIRECTORY msg
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
+
+install(FILES plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

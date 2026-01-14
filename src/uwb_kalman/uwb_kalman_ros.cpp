@@ -1,0 +1,50 @@
+#include <uvdar_ros_driver/uwb_kalman/uwb_kalman_ros.h>
+
+namespace uvdar_ros_driver {
+
+/* onInit //{ */
+void UwbKalmanFilterNodelet::onInit() {
+  nh_ = nodelet::Nodelet::getMTPrivateNodeHandle();
+
+  ros::Time::waitForValid();
+  loadParams_();
+
+  filter_ = std::make_unique<UwbKalmanFilter>(_filter_cfg_);
+
+  startMainLoop_();
+
+  ROS_INFO("[%s]: Initialized.", ros::this_node::getName().c_str());
+  initialized_ = true;
+}
+//}
+
+/* startMainLoop_ //{ */
+void UwbKalmanFilterNodelet::startMainLoop_() {
+  main_timer_ = nh_.createTimer(ros::Duration(_filter_cfg_.update_period_s), &UwbKalmanFilterNodelet::spinOnce_, this);
+}
+//}
+
+/* loadParams_ //{ */
+void UwbKalmanFilterNodelet::loadParams_() {
+  param_loader_ = std::make_unique<mrs_lib::ParamLoader>(nh_, "UwbKalman");
+
+  // TODO: add later on
+  std::string uav_name_;
+  param_loader_->loadParam("uav_name", uav_name_);
+
+  // | ------- check if all parameters loaded successfully ------ |
+  // if (!param_loader_->loadedSuccessfully()) {
+  //   ROS_ERROR("[%s]: Could not load all non-optional parameters. Shutting down.", ros::this_node::getName().c_str());
+  //   ros::shutdown();
+  // }
+}
+//}
+
+/* spinOnce_ //{ */
+void UwbKalmanFilterNodelet::spinOnce_([[maybe_unused]] const ros::TimerEvent& e) {
+}
+//}
+
+} // namespace uvdar_ros_driver
+
+PLUGINLIB_EXPORT_CLASS(uvdar_ros_driver::UwbKalmanFilterNodelet, nodelet::Nodelet)
