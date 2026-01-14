@@ -19,6 +19,8 @@
   <depend>nodelet</depend>
   <depend>mrs_lib</depend>
 
+  <test_depend>rostest</test_depend>
+
   <export>
 
     <!-- The plugins.xml file defines nodelet as a plugin -->

@@ -5,6 +5,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+option(ENABLE_TESTS "Enable building tests" ON)
+
+
 add_definitions(-DLLCP_LITTLE_ENDIAN)
 add_definitions(-DLLCP_COMM_HEXADECIMAL=0)
 
@@ -56,25 +63,42 @@ target_link_libraries(UvdarRosDriver
   )
 
 ## | --------------------- UwbKalmanFilter --------------------- |
-add_library(UwbKalmanFilterNodelet SHARED
+add_library(UwbKalmanFilterCore SHARED
   src/uwb_kalman/uwb_kalman_core.cpp 
-  src/uwb_kalman/uwb_kalman_ros.cpp)
+)
+
+target_include_directories(UwbKalmanFilterCore
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/UwbKalmanFilterCore
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+
+add_library(UwbKalmanFilterNodelet SHARED
+  src/uwb_kalman/uwb_kalman_ros.cpp
+)
+
+target_link_libraries(UwbKalmanFilterNodelet
+  UwbKalmanFilterCore
+  ${catkin_LIBRARIES}
+)
 
 target_include_directories(UwbKalmanFilterNodelet
   PUBLIC
     include
     ${catkin_INCLUDE_DIRS}
 )
+## --------------------------------------------------------------
+## |                           Testing                          |
+## --------------------------------------------------------------
 
-target_link_libraries(UwbKalmanFilterNodelet
-  ${catkin_LIBRARIES}
-)
-
+if(ENABLE_TESTS)
+  add_subdirectory(test)
+endif()
 
 ## --------------------------------------------------------------
 ## |                           Install                          |
 ## --------------------------------------------------------------
-
 
 install(DIRECTORY msg
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
@@ -82,4 +106,13 @@ install(DIRECTORY msg
 
 install(FILES plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(TARGETS
+  llcp
+  UvdarRosDriver
+  UwbKalmanFilterNodelet
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )

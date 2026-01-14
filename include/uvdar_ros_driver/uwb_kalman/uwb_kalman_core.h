@@ -7,8 +7,11 @@
 namespace uvdar_ros_driver {
 
 struct KalmanFilterCfg {
+  double sigma_range;
+  double sigma_acc;
   double update_period_s;
   double dt;
+  double dt_max;
 };
 
 namespace uwb_generic {
@@ -34,29 +37,21 @@ using statecov_t = lkf_t::statecov_t;
 struct UwbKalmanModelCfg {
   A_t A; // system transition
   B_t B; // input matrix
-  H_t H; // state to measurement
+  H_t H; // measurement mapping
   Q_t Q; // process noise (model noise)
   R_t R; // measurement noise
   u_t u; // input
   statecov_t state_cov;
 
   std::mutex mtx;
-
-  // UwbKalmanModelCfg() {
-  //   A.resize(uwb_generic::n_states, uwb_generic::n_states);
-  //   B = B_t();
-  //   H.resize(uwb_generic::n_measurements, uwb_generic::n_states);
-  //   Q.resize(uwb_generic::n_states, uwb_generic::n_states);
-  //   u = u_t();
-  // }
 };
 
 class UwbKalmanFilter {
  public:
   explicit UwbKalmanFilter(const KalmanFilterCfg& cfg);
 
-  void filter(const double range);
-  void setDt(const double dt);
+  std::optional<statecov_t> filter(const double range, const double curr_time);
+  void reset(const double range, const double curr_time);
 
  private:
   void generateA_();
@@ -66,11 +61,18 @@ class UwbKalmanFilter {
   void generate_u_();
   void generateR_();
 
+  void setDt_(const double dt);
+
  private:
   KalmanFilterCfg cfg_; // TODO: maybe change later to non const, or non reference
   UwbKalmanModelCfg filter_model_;
 
   std::shared_ptr<lkf_t> lkf_;
+  std::mutex mutex_sc_;
+
+  double last_time_;
+
+  bool is_initialized_{false};
 };
 
 } // namespace uvdar_ros_driver

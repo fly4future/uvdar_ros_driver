@@ -13,7 +13,7 @@ void UwbKalmanFilterNodelet::onInit() {
 
   startMainLoop_();
 
-  ROS_INFO("[%s]: Initialized.", ros::this_node::getName().c_str());
+  ROS_INFO("[UwbKalmanFilterNodelet]: Initialized.");
   initialized_ = true;
 }
 //}
@@ -26,11 +26,14 @@ void UwbKalmanFilterNodelet::startMainLoop_() {
 
 /* loadParams_ //{ */
 void UwbKalmanFilterNodelet::loadParams_() {
-  param_loader_ = std::make_unique<mrs_lib::ParamLoader>(nh_, "UwbKalman");
+  nh_.getParam("sigma_range", _filter_cfg_.sigma_range);
+  nh_.getParam("sigma_acc", _filter_cfg_.sigma_acc);
+
+  // param_loader_ = std::make_unique<mrs_lib::ParamLoader>(nh_);
 
   // TODO: add later on
-  std::string uav_name_;
-  param_loader_->loadParam("uav_name", uav_name_);
+  // std::string uav_name_;
+  // param_loader_->loadParam("uav_name", uav_name_);
 
   // | ------- check if all parameters loaded successfully ------ |
   // if (!param_loader_->loadedSuccessfully()) {

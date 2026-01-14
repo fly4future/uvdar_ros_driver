@@ -34,7 +34,7 @@
     </node>
 
     <!-- launch the Driver nodelet -->
-    <node if="$(arg run_driver)"
+    <!-- <node if="$(arg run_driver)"
           pkg="nodelet" 
           type="nodelet" 
           name="$(arg nodename)" 
@@ -49,20 +49,24 @@
       <param name="debug_serial" type="bool" value="false" />
 
       <param  unless="$(eval arg('serial_number') == '')" name="uvdar_usb_serial" type="string" value="$(arg serial_number)"/>
-      <param name="uvdar_frame_id" type="string" value="$(arg frame_id)"/>
+      <param name="uvdar_frame_id" type="string" value="$(arg frame_id)"/> -->
 
       <!-- remap the topic names to the UAV namespace
       <remap from="~distance" to="~received_message" />
       -->
-    </node>
+    <!-- </node> -->
 
     <!-- launch the UwbKalman nodelet -->
-    <node pkg="nodelet" 
+
+     <node pkg="nodelet" 
           type="nodelet" 
           name="uwb_kalman_filter"
           args="$(arg nodelet) uvdar_ros_driver/UwbKalmanFilterNodelet $(arg nodelet_manager)"
           launch-prefix="$(arg launch_prefix_debug)"
           output="screen">
+
+        <rosparam command="load" file="$(find uvdar_ros_driver)/config/kalman_cfg.yaml" />
+
     </node>
     
 
