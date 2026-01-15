@@ -27,9 +27,10 @@ generate_messages(DEPENDENCIES
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES LlcpRos
+  LIBRARIES 
   CATKIN_DEPENDS roscpp
   )
+  #LlcpRos
 
 include_directories(
   include
