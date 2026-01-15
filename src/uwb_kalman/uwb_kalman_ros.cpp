@@ -4,12 +4,13 @@ namespace uvdar_ros_driver {
 
 /* onInit //{ */
 void UwbKalmanFilterNodelet::onInit() {
-  nh_ = nodelet::Nodelet::getMTPrivateNodeHandle();
+  nh_     = nodelet::Nodelet::getMTPrivateNodeHandle();
+  logger_ = std::make_shared<RosLogger>("UwbKalmanFilterNodelet");
 
   ros::Time::waitForValid();
   loadParams_();
 
-  filter_ = std::make_unique<UwbKalmanFilter>(_filter_cfg_);
+  filter_ = std::make_unique<UwbKalmanFilter>(*logger_, _filter_cfg_);
 
   startMainLoop_();
 
@@ -26,6 +27,8 @@ void UwbKalmanFilterNodelet::startMainLoop_() {
 
 /* loadParams_ //{ */
 void UwbKalmanFilterNodelet::loadParams_() {
+  nh_.getParam("update_period_s", _filter_cfg_.update_period_s);
+  nh_.getParam("dt_max_s", _filter_cfg_.dt_max);
   nh_.getParam("sigma_range", _filter_cfg_.sigma_range);
   nh_.getParam("sigma_acc", _filter_cfg_.sigma_acc);
 

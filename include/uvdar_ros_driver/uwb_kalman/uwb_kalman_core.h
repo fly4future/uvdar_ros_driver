@@ -1,8 +1,10 @@
 #pragma once
 
+#include <string>
 #include <mutex>
 
 #include <mrs_lib/lkf.h>
+#include <uvdar_ros_driver/utils/i_logger.h>
 
 namespace uvdar_ros_driver {
 
@@ -42,13 +44,14 @@ struct UwbKalmanModelCfg {
   R_t R; // measurement noise
   u_t u; // input
   statecov_t state_cov;
+  double last_time;
 
   std::mutex mtx;
 };
 
 class UwbKalmanFilter {
  public:
-  explicit UwbKalmanFilter(const KalmanFilterCfg& cfg);
+  explicit UwbKalmanFilter(ILogger& logger, const KalmanFilterCfg& cfg);
 
   std::optional<statecov_t> filter(const double range, const double curr_time);
   void reset(const double range, const double curr_time);
@@ -64,13 +67,11 @@ class UwbKalmanFilter {
   void setDt_(const double dt);
 
  private:
+  ILogger& logger_;
   KalmanFilterCfg cfg_; // TODO: maybe change later to non const, or non reference
   UwbKalmanModelCfg filter_model_;
 
   std::shared_ptr<lkf_t> lkf_;
-  std::mutex mutex_sc_;
-
-  double last_time_;
 
   bool is_initialized_{false};
 };

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 
+#include "../dummy_logger.h"
 #include <uvdar_ros_driver/uwb_kalman/uwb_kalman_core.h>
 
 static double rmse(const std::vector<double>& e) {
@@ -14,6 +15,8 @@ static double rmse(const std::vector<double>& e) {
 }
 
 TEST(UwbLkf, ConstantRangeReducesNoise) {
+  DummyLogger logger;
+
   std::ofstream f("/home/user/ros_ws/src/uvdar_ros_driver/test/uwb_kf_debug.csv");
   f << "t,truth,meas,est,var\n";
 
@@ -22,7 +25,7 @@ TEST(UwbLkf, ConstantRangeReducesNoise) {
   cfg.dt_max      = 0.5;
   cfg.sigma_acc   = 2.0;
   cfg.sigma_range = 0.3;
-  uvdar_ros_driver::UwbKalmanFilter kf(cfg);
+  uvdar_ros_driver::UwbKalmanFilter kf(logger, cfg);
 
   const double r_true     = 10.0;
   const double sigma_meas = 0.30;

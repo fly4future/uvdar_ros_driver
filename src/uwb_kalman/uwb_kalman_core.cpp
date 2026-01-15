@@ -3,7 +3,7 @@
 namespace uvdar_ros_driver {
 
 /* UwbKalmanFilter constructor //{ */
-UwbKalmanFilter::UwbKalmanFilter(const KalmanFilterCfg& cfg) {
+UwbKalmanFilter::UwbKalmanFilter(ILogger& logger, const KalmanFilterCfg& cfg) : logger_(logger) {
   cfg_ = cfg;
 
   generateA_();
@@ -94,7 +94,7 @@ void UwbKalmanFilter::reset(const double range, const double curr_time) {
   filter_model_.state_cov.x(1) = 0.0;
   filter_model_.state_cov.P    = 1e3 * P_t::Identity();
 
-  last_time_ = curr_time;
+  filter_model_.last_time = curr_time;
 }
 /*//}*/
 
@@ -107,7 +107,7 @@ std::optional<statecov_t> UwbKalmanFilter::filter(const double range, const doub
     return filter_model_.state_cov;
   }
 
-  const auto dt = curr_time - last_time_;
+  const auto dt = curr_time - filter_model_.last_time;
   if (dt <= 0.0) {
     return std::nullopt;
   }
@@ -118,7 +118,7 @@ std::optional<statecov_t> UwbKalmanFilter::filter(const double range, const doub
   }
 
   setDt_(dt);
-  last_time_ = curr_time;
+  filter_model_.last_time = curr_time;
 
   try {
     std::scoped_lock lock(filter_model_.mtx);
@@ -131,7 +131,7 @@ std::optional<statecov_t> UwbKalmanFilter::filter(const double range, const doub
 
   } catch (const std::exception& e) {
     // In case of error, alert the user
-    ROS_ERROR("[UwbKalmanFilter]: LKF prediction failed: %s", e.what());
+    logger_.error("[UwbKalmanFilter]: LKF prediction failed: " + std::string(e.what()));
   }
   return filter_model_.state_cov;
 }

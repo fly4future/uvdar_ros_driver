@@ -9,6 +9,7 @@
 #include <mrs_lib/param_loader.h>
 
 #include <uvdar_ros_driver/uwb_kalman/uwb_kalman_core.h>
+#include <uvdar_ros_driver/utils/ros_logger.h>
 
 namespace uvdar_ros_driver {
 
@@ -25,6 +26,7 @@ class UwbKalmanFilterNodelet : public nodelet::Nodelet {
  private:
   ros::NodeHandle nh_;
   std::unique_ptr<mrs_lib::ParamLoader> param_loader_;
+  std::shared_ptr<RosLogger> logger_;
 
   KalmanFilterCfg _filter_cfg_;
   std::unique_ptr<UwbKalmanFilter> filter_;

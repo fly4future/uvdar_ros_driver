@@ -58,15 +58,14 @@
 
     <!-- launch the UwbKalman nodelet -->
 
-     <node pkg="nodelet" 
-          type="nodelet" 
-          name="uwb_kalman_filter"
-          args="$(arg nodelet) uvdar_ros_driver/UwbKalmanFilterNodelet $(arg nodelet_manager)"
-          launch-prefix="$(arg launch_prefix_debug)"
-          output="screen">
+    <node pkg="nodelet" 
+        type="nodelet" 
+        name="uwb_kalman_filter"
+        args="$(arg nodelet) uvdar_ros_driver/UwbKalmanFilterNodelet $(arg nodelet_manager)"
+        launch-prefix="$(arg launch_prefix_debug)"
+        output="screen">
 
-        <rosparam command="load" file="$(find uvdar_ros_driver)/config/kalman_cfg.yaml" />
-
+      <rosparam command="load" file="$(find uvdar_ros_driver)/config/kalman_cfg.yaml" />
     </node>
     
 
